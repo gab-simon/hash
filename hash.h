@@ -1,17 +1,17 @@
-#ifndef __AVL__
-#define __AVL__
+#ifndef HASH_H
+#define HASH_H
 
-struct node {
-    bool used;
+// Label: 0 - vazia; 1 - preenchida; 2 - excluído
+typedef struct hashTable {
     int key;
-}; typedef struct node node_t;
+    int label;
 
-node_t* createTable(int value);
+} hashTable_t;
 
-node_t* insertNode(node_t* root, int value);
-
-node_t* removeNode(node_t* root, int key);
-
-void printAVL(node_t *root, int level);
-
+// API
+hashTable_t *createHashTable();
+void insertHash(hashTable_t *hashTable1, hashTable_t *hashTable2, int key);
+int removeHash(hashTable_t *hashTable1, hashTable_t *hashTable2, int key);
+int searchHash(hashTable_t *hashTable1, hashTable_t *hashTable2, int key);
+void printHashTable(hashTable_t *hashTable1, hashTable_t *hashTable2);
 #endif

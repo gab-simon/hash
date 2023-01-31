@@ -1,128 +1,120 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "hash.h"
+#define SIZE 11
 
-node_t *createTable(int size)
+// Função que retorna o código hash da primeira tabela
+int hashcode1(int key)
 {
-    node_t *table = malloc(size * sizeof(node_t));
-    for (int i = 0; i < size; i++)
-    {
-        table[i].key = -1;
-        table[i].used = true;
-    }
-    return table;
+    return key % SIZE;
 }
 
-// node_t *insertNode(node_t *root, int x)
-// {
-//     // Árvore vazia
-//     if (root == NULL)
-//         return createNode(x);
-//     // Inserção será à esquerda ou à direita
-//     else
-//     {
-//         if (x < root->value)
-//             root->lef = insertNode(root->lef, x);
-//         else
-//             root->rig = insertNode(root->rig, x);
-//     }
+// Função que retorna o código hash da segunda tabela
+int hashcode2(int key)
+{
+    int floor = key * 0.9;
+    float notFloor = key * 0.9;
+    return SIZE * (notFloor - floor);
+}
 
-//     // Recalcula a altura de todos os nós entre a root e o novo nó inserido
-//     root->height = larger(heightNode(root->lef), heightNode(root->rig)) + 1;
+// Função que inicia uma tabela hash
+hashTable_t *createHashTable()
+{
+    hashTable_t *newHashTable = malloc(sizeof(hashTable_t) * SIZE);
+    if (!newHashTable)
+        return NULL;
 
-//     // Verifica a necessidade de rebalancear a árvore
-//     root = balance(root);
+    // Inicializa os valores da tabela
+    for (int i = 0; i < SIZE; i++)
+    {
+        newHashTable[i].key = 0;
+        newHashTable[i].label = 0;
+    }
 
-//     return root;
-// }
+    return newHashTable;
+}
 
-// node_t *removeNode(node_t *root, int key)
-// {
-//     if (root == NULL)
-//         return root;
+// Função que consulta uma chave nas duas tabelas hash
+int searchHash(hashTable_t *hashTable1, hashTable_t *hashTable2, int key)
+{
+    int index1 = hashcode1(key);
+    int index2 = hashcode2(key);
+    if (hashTable1[index1].label == 1 && hashTable1[index1].key == key)
+        return index1;
+    else if (hashTable2[index2].label == 1 && hashTable2[index2].key == key)
+        return index2;
+    else
+        return -1;
+}
 
-//     // Busca valor (BST)
-//     if (key < root->value)
-//         root->lef = removeNode(root->lef, key);
-//     else if (key > root->value)
-//         root->rig = removeNode(root->rig, key);
-//     else
-//     { // Encontrou o valor.
+// Função que insere uma chave na tabela hash
+void insertHash(hashTable_t *hashTable1, hashTable_t *hashTable2, int key)
+{
+    int index1 = hashcode1(key);
+    int index2 = hashcode2(key);
+    int indexAux;
 
-//         // Verifica se um dos filhos é nulo.
-//         if ((root->lef == NULL) || (root->rig == NULL))
-//         {
-//             node_t *temp = NULL;
-//             if (root->lef != NULL)
-//                 temp = root->lef;
-//             else
-//                 temp = root->rig;
+    // Verifica se a chave já existe na hash
+    if (hashTable1[index1].label == 1 && hashTable1[index1].key == key)
+        return;
+    else if (hashTable2[index2].label == 1 && hashTable2[index2].key == key)
+        return;
+    // Insere a chave na hash
+    else
+    {
+        // Insere chave na segunda tabela
+        if (hashTable1[index1].label == 1)
+        {
+            indexAux = hashcode2(hashTable1[index1].key);
+            hashTable2[indexAux].key = hashTable1[index1].key;
+            hashTable2[indexAux].label = 1;
+            hashTable1[index1].key = key;
+        }
+        // Insere a chave na primeira tabela
+        else
+        {
+            hashTable1[index1].key = key;
+            hashTable1[index1].label = 1;
+        }
+    }
+}
 
-//             if (temp == NULL)
-//             {
-//                 // Se é uma folha, ele exclui.
-//                 temp = root;
-//                 root = NULL;
-//             }
-//             else
-//             {
-//                 // Atualizando o no da root da subarvore.
-//                 *root = *temp;
-//             }
+// Função que remove uma chave da tabela hash
+int removeHash(hashTable_t *hashTable1, hashTable_t *hashTable2, int key)
+{
+    int index1 = hashcode1(key);
+    int index2 = hashcode2(key);
 
-//             free(temp);
-//         }
-//         else
-//         {
-//             // Substituição pelo antecessor.
-//             node_t *temp = maxNo(root->lef);
-//             root->value = temp->value;
-//             root->lef = removeNode(root->lef, temp->value);
-//         }
-//     }
+    if (hashTable2[index2].label == 1 && hashTable2[index2].key == key)
+    {
+        hashTable2[index2].label = 2;
+        hashTable2[index2].key = 0;
+    }
+    else if (hashTable1[index1].label == 1 && hashTable1[index1].key == key)
+    {
+        hashTable1[index1].label = 2;
+        hashTable1[index1].key = 0;
+    }
+    else
+        return 0;
+    return 1;
+}
 
-//     if (root == NULL)
-//         return root;
-
-//     // Atualiza a altura do nó atual.
-//     root->height = larger(heightNode(root->lef), heightNode(root->rig)) + 1;
-
-//     // Verifica o fator de balanceamento entre os dois filhos do nó.
-//     int fator = checkBalance(root);
-//     if (fator > 1)
-//     {
-//         if (checkBalance(root->lef) >= 0)
-//         {
-//             return rightRotation(root);
-//         }
-//         else
-//         {
-//             root->lef = leftRotation(root->lef);
-//             return rightRotation(root);
-//         }
-//     }
-//     else if (fator < -1)
-//     {
-//         if (checkBalance(root->rig) <= 0)
-//         {
-//             return leftRotation(root);
-//         }
-//         else
-//         {
-//             root->rig = rightRotation(root->rig);
-//             return leftRotation(root);
-//         }
-//     }
-
-//     return root;
-// }
-
-// void printAVL(node_t *root, int level)
-// {
-//     if (root)
-//     {
-//         printAVL(root->lef, level + 1);
-//         printf("%d,%d\n", root->value, level);
-//         printAVL(root->rig, level + 1);
-//     }
-// }
+// Função que imprime a tabela hash
+void printHashTable(hashTable_t *hashTable1, hashTable_t *hashTable2)
+{
+    int i;
+    printf("  T1            T2\n");
+    printf("---------------------\n");
+    for (i = 0; i < SIZE; i++)
+    {
+        if (hashTable1[i].label == 1 && hashTable1[i].key == 0)
+            printf("%2d|%-12d", i, hashTable1[i].key);
+        else
+            printf("%2d|%-12.d", i, hashTable1[i].key);
+        if (hashTable2[i].label == 1 && hashTable2[i].key == 0)
+            printf("%2d|%-12d\n", i, hashTable2[i].key);
+        else
+            printf("%2d|%-12.d\n", i, hashTable2[i].key);
+    }
+}
